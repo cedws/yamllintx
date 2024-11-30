@@ -16,6 +16,7 @@ func newLintError(err error, pos *token.Position) error {
 }
 
 type sourceContext struct {
+	lastToken    *token.Token
 	currentToken *token.Token
 	nextToken    *token.Token
 }
@@ -32,12 +33,17 @@ func LintAll(src string, linters ...Linter) iter.Seq[error] {
 		tokens := lexer.Tokenize(src)
 
 		for _, lint := range linters {
-			var lastToken *token.Token
-
-			for _, token := range tokens {
+			for i := 0; i < len(tokens); i++ {
 				srcContext := sourceContext{
-					currentToken: token,
-					nextToken:    lastToken,
+					currentToken: tokens[i],
+				}
+
+				if i >= 1 {
+					srcContext.lastToken = tokens[i-1]
+				}
+
+				if i < len(tokens)-1 {
+					srcContext.nextToken = tokens[i+1]
 				}
 
 				if err := lint.Check(srcContext); err != nil {
@@ -45,8 +51,6 @@ func LintAll(src string, linters ...Linter) iter.Seq[error] {
 						return
 					}
 				}
-
-				lastToken = token
 			}
 		}
 	}
