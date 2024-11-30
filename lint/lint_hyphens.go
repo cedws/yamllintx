@@ -13,7 +13,7 @@ type Hyphens struct {
 	MaxSpacesAfter int
 }
 
-func (h Hyphens) Check(ctx sourceContext) error {
+func (h Hyphens) CheckToken(ctx tokenConext) error {
 	if h.MaxSpacesAfter > 0 {
 		if err := h.checkMaxSpacesAfter(ctx); err != nil {
 			return err
@@ -23,7 +23,11 @@ func (h Hyphens) Check(ctx sourceContext) error {
 	return nil
 }
 
-func (h Hyphens) checkMaxSpacesAfter(ctx sourceContext) error {
+func (h Hyphens) CheckLine(ctx lineContext) error {
+	return nil
+}
+
+func (h Hyphens) checkMaxSpacesAfter(ctx tokenConext) error {
 	if ctx.currentToken.Type != token.SequenceEntryType || ctx.nextToken == nil {
 		return nil
 	}
@@ -36,7 +40,7 @@ func (h Hyphens) checkMaxSpacesAfter(ctx sourceContext) error {
 		firstNonSpace = len(origin)
 	}
 	if firstNonSpace > h.MaxSpacesAfter {
-		return newLintError(hypensMaxSpacesAfter, ctx.nextToken.Position)
+		return newLintErrorForPosition(hypensMaxSpacesAfter, ctx.nextToken.Position)
 	}
 
 	return nil

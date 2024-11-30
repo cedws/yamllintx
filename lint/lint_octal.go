@@ -11,7 +11,7 @@ type Octal struct {
 	ForbidExplicitOctal bool
 }
 
-func (o Octal) Check(ctx sourceContext) error {
+func (o Octal) CheckToken(ctx tokenConext) error {
 	if o.ForbidImplicitOctal {
 		if err := o.checkImplicitOctal(ctx); err != nil {
 			return err
@@ -27,7 +27,11 @@ func (o Octal) Check(ctx sourceContext) error {
 	return nil
 }
 
-func (o Octal) checkImplicitOctal(ctx sourceContext) error {
+func (o Octal) CheckLine(ctx lineContext) error {
+	return nil
+}
+
+func (o Octal) checkImplicitOctal(ctx tokenConext) error {
 	if ctx.currentToken.Type != token.OctetIntegerType {
 		return nil
 	}
@@ -37,13 +41,13 @@ func (o Octal) checkImplicitOctal(ctx sourceContext) error {
 	}
 
 	if ctx.currentToken.Value[0] == '0' && ctx.currentToken.Value[1] != 'o' {
-		return newLintError(errors.New("implicit octal literals are forbidden"), ctx.currentToken.Position)
+		return newLintErrorForPosition(errors.New("implicit octal literals are forbidden"), ctx.currentToken.Position)
 	}
 
 	return nil
 }
 
-func (o Octal) checkExplicitOctal(ctx sourceContext) error {
+func (o Octal) checkExplicitOctal(ctx tokenConext) error {
 	if ctx.currentToken.Type != token.OctetIntegerType {
 		return nil
 	}
@@ -53,7 +57,7 @@ func (o Octal) checkExplicitOctal(ctx sourceContext) error {
 	}
 
 	if ctx.currentToken.Value[0] == '0' && ctx.currentToken.Value[1] == 'o' {
-		return newLintError(errors.New("explicit octal literals are forbidden"), ctx.currentToken.Position)
+		return newLintErrorForPosition(errors.New("explicit octal literals are forbidden"), ctx.currentToken.Position)
 	}
 
 	return nil

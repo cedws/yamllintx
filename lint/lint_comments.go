@@ -13,7 +13,7 @@ type Comments struct {
 	IgnoreShebangs       bool
 }
 
-func (c Comments) Check(ctx sourceContext) error {
+func (c Comments) CheckToken(ctx tokenConext) error {
 	if c.RequireStartingSpace {
 		if err := c.checkStartingSpace(ctx); err != nil {
 			return err
@@ -23,7 +23,11 @@ func (c Comments) Check(ctx sourceContext) error {
 	return nil
 }
 
-func (c Comments) checkStartingSpace(ctx sourceContext) error {
+func (c Comments) CheckLine(ctx lineContext) error {
+	return nil
+}
+
+func (c Comments) checkStartingSpace(ctx tokenConext) error {
 	if ctx.currentToken.Type != token.CommentType {
 		return nil
 	}
@@ -37,7 +41,7 @@ func (c Comments) checkStartingSpace(ctx sourceContext) error {
 	}
 
 	if ctx.currentToken.Value[0] != ' ' {
-		return newLintError(commentRequireStartingSpace, ctx.currentToken.Position)
+		return newLintErrorForPosition(commentRequireStartingSpace, ctx.currentToken.Position)
 	}
 
 	return nil
