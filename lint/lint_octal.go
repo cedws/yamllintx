@@ -2,6 +2,7 @@ package lint
 
 import (
 	"errors"
+	"iter"
 
 	"github.com/goccy/go-yaml/token"
 )
@@ -11,43 +12,44 @@ type Octal struct {
 	ForbidExplicitOctal bool
 }
 
-func (o Octal) CheckToken(ctx tokenConext) error {
-	if o.ForbidImplicitOctal {
-		if err := o.checkImplicitOctal(ctx); err != nil {
-			return err
+func (o Octal) CheckToken(ctx tokenContext) iter.Seq[Problem] {
+	return func(yield func(Problem) bool) {
+		if o.ForbidImplicitOctal {
+			o.checkImplicitOctal(ctx, yield)
+		}
+
+		if o.ForbidExplicitOctal {
+			o.checkExplicitOctal(ctx, yield)
 		}
 	}
-
-	if o.ForbidExplicitOctal {
-		if err := o.checkExplicitOctal(ctx); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
-func (o Octal) CheckLine(ctx lineContext) error {
-	return nil
+func (o Octal) CheckLine(ctx lineContext) iter.Seq[Problem] {
+	return func(yield func(Problem) bool) {}
 }
 
-func (o Octal) checkImplicitOctal(ctx tokenConext) error {
+func (o Octal) checkImplicitOctal(ctx tokenContext, yield func(Problem) bool) {
 	if ctx.currentToken.Type != token.OctetIntegerType {
-		return nil
+		return
 	}
 
 	if len(ctx.currentToken.Value) < 2 {
-		return nil
+		return
 	}
 
 	if ctx.currentToken.Value[0] == '0' && ctx.currentToken.Value[1] != 'o' {
-		return newLintErrorForPosition(errors.New("implicit octal literals are forbidden"), ctx.currentToken.Position)
+		problem := Problem{
+			Line:   ctx.currentToken.Position.Line,
+			Column: ctx.currentToken.Position.Column,
+			Error:  newLintError(errors.New("implicit octal literals are forbidden")),
+		}
+		if !yield(problem) {
+			return
+		}
 	}
-
-	return nil
 }
 
-func (o Octal) checkExplicitOctal(ctx tokenConext) error {
+func (o Octal) checkExplicitOctal(ctx tokenContext, yield func(Problem) bool) error {
 	if ctx.currentToken.Type != token.OctetIntegerType {
 		return nil
 	}
@@ -57,7 +59,14 @@ func (o Octal) checkExplicitOctal(ctx tokenConext) error {
 	}
 
 	if ctx.currentToken.Value[0] == '0' && ctx.currentToken.Value[1] == 'o' {
-		return newLintErrorForPosition(errors.New("explicit octal literals are forbidden"), ctx.currentToken.Position)
+		problem := Problem{
+			Line:   ctx.currentToken.Position.Line,
+			Column: ctx.currentToken.Position.Column,
+			Error:  newLintError(errors.New("explicit octal literals are forbidden")),
+		}
+		if !yield(problem) {
+			return nil
+		}
 	}
 
 	return nil

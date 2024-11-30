@@ -2,6 +2,7 @@ package lint
 
 import (
 	"errors"
+	"iter"
 	"strings"
 
 	"github.com/goccy/go-yaml/token"
@@ -13,23 +14,21 @@ type Hyphens struct {
 	MaxSpacesAfter int
 }
 
-func (h Hyphens) CheckToken(ctx tokenConext) error {
-	if h.MaxSpacesAfter > 0 {
-		if err := h.checkMaxSpacesAfter(ctx); err != nil {
-			return err
+func (h Hyphens) CheckToken(ctx tokenContext) iter.Seq[Problem] {
+	return func(yield func(Problem) bool) {
+		if h.MaxSpacesAfter > 0 {
+			h.checkMaxSpacesAfter(ctx, yield)
 		}
 	}
-
-	return nil
 }
 
-func (h Hyphens) CheckLine(ctx lineContext) error {
-	return nil
+func (h Hyphens) CheckLine(ctx lineContext) iter.Seq[Problem] {
+	return func(yield func(Problem) bool) {}
 }
 
-func (h Hyphens) checkMaxSpacesAfter(ctx tokenConext) error {
+func (h Hyphens) checkMaxSpacesAfter(ctx tokenContext, yield func(Problem) bool) {
 	if ctx.currentToken.Type != token.SequenceEntryType || ctx.nextToken == nil {
-		return nil
+		return
 	}
 
 	origin := ctx.nextToken.Origin
@@ -40,8 +39,13 @@ func (h Hyphens) checkMaxSpacesAfter(ctx tokenConext) error {
 		firstNonSpace = len(origin)
 	}
 	if firstNonSpace > h.MaxSpacesAfter {
-		return newLintErrorForPosition(hypensMaxSpacesAfter, ctx.nextToken.Position)
+		problem := Problem{
+			Line:   ctx.nextToken.Position.Line,
+			Column: ctx.nextToken.Position.Column + firstNonSpace,
+			Error:  newLintError(hypensMaxSpacesAfter),
+		}
+		if !yield(problem) {
+			return
+		}
 	}
-
-	return nil
 }

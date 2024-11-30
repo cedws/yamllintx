@@ -2,10 +2,10 @@ package lint
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"iter"
-	"strings"
 
 	"github.com/goccy/go-yaml/lexer"
 	"github.com/goccy/go-yaml/token"
@@ -13,15 +13,11 @@ import (
 
 var lintError = errors.New("lint error")
 
-func newLintError(err error, line, column int) error {
-	return fmt.Errorf("%w: %w (%d:%d)", lintError, err, line, column)
+func newLintError(err error) error {
+	return fmt.Errorf("%w: %w", lintError, err)
 }
 
-func newLintErrorForPosition(err error, pos *token.Position) error {
-	return newLintError(err, pos.Line, pos.Column)
-}
-
-type tokenConext struct {
+type tokenContext struct {
 	lastToken    *token.Token
 	currentToken *token.Token
 	nextToken    *token.Token
@@ -33,24 +29,29 @@ type lineContext struct {
 }
 
 type Linter interface {
-	CheckToken(tokenConext) error
-	CheckLine(lineContext) error
+	CheckToken(tokenContext) iter.Seq[Problem]
+	CheckLine(lineContext) iter.Seq[Problem]
 }
 
 type Chain []Linter
 
+type Problem struct {
+	Line   int
+	Column int
+	Error  error
+}
+
 // LintAll performs linting on the entire source code and returns an iterator of all errors found.
-func LintAll(src string, linters ...Linter) iter.Seq[error] {
-	tokens := lexer.Tokenize(src)
-	tokens.Dump()
+func LintAll(src []byte, linters ...Linter) iter.Seq[Problem] {
+	tokens := lexer.Tokenize(string(src))
 
 	var lines []string
-	scanner := bufio.NewScanner(strings.NewReader(src))
+	scanner := bufio.NewScanner(bytes.NewReader(src))
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
 
-	seqFunc := func(yield func(error) bool) {
+	seqFunc := func(yield func(Problem) bool) {
 		for _, lint := range linters {
 			for i := 0; i < len(lines); i++ {
 				lineContext := lineContext{
@@ -58,15 +59,15 @@ func LintAll(src string, linters ...Linter) iter.Seq[error] {
 					currentLineNumber: i + 1,
 				}
 
-				if err := lint.CheckLine(lineContext); err != nil {
-					if !yield(err) {
+				for problem := range lint.CheckLine(lineContext) {
+					if !yield(problem) {
 						return
 					}
 				}
 			}
 
 			for i := 0; i < len(tokens); i++ {
-				srcContext := tokenConext{
+				srcContext := tokenContext{
 					currentToken: tokens[i],
 				}
 
@@ -78,8 +79,8 @@ func LintAll(src string, linters ...Linter) iter.Seq[error] {
 					srcContext.nextToken = tokens[i+1]
 				}
 
-				if err := lint.CheckToken(srcContext); err != nil {
-					if !yield(err) {
+				for problem := range lint.CheckToken(srcContext) {
+					if !yield(problem) {
 						return
 					}
 				}
@@ -91,9 +92,9 @@ func LintAll(src string, linters ...Linter) iter.Seq[error] {
 }
 
 // Lint performs linting on the entire source code and returns the first error found.
-func Lint(src string, linters ...Linter) error {
+func Lint(src []byte, linters ...Linter) *Problem {
 	for err := range LintAll(src, linters...) {
-		return err
+		return &err
 	}
 
 	return nil

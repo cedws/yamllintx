@@ -31,8 +31,8 @@ func TestAnchorForbidUndeclaredAliases(t *testing.T) {
 			lint := NewAnchors()
 			lint.ForbidUndeclaredAliases = true
 
-			err := Lint(src, lint)
-			assert.NoError(t, err)
+			problem := Lint([]byte(src), lint)
+			assert.Nil(t, problem)
 		}
 	})
 
@@ -41,8 +41,8 @@ func TestAnchorForbidUndeclaredAliases(t *testing.T) {
 			lint := NewAnchors()
 			lint.ForbidUndeclaredAliases = true
 
-			err := Lint(src, lint)
-			assert.Error(t, err)
+			problem := Lint([]byte(src), lint)
+			assert.NotNil(t, problem)
 		}
 	})
 }
@@ -63,8 +63,8 @@ func TestAnchorForbidDuplicatedAliases(t *testing.T) {
 			lint := NewAnchors()
 			lint.ForbidDuplicatedAnchors = true
 
-			err := Lint(src, lint)
-			assert.NoError(t, err)
+			problem := Lint([]byte(src), lint)
+			assert.Nil(t, problem)
 		}
 	})
 
@@ -73,8 +73,8 @@ func TestAnchorForbidDuplicatedAliases(t *testing.T) {
 			lint := NewAnchors()
 			lint.ForbidDuplicatedAnchors = true
 
-			err := Lint(src, lint)
-			assert.Error(t, err)
+			problem := Lint([]byte(src), lint)
+			assert.NotNil(t, problem)
 		}
 	})
 }
@@ -99,8 +99,8 @@ func TestAnchorForbidUnusedAnchors(t *testing.T) {
 			lint := NewAnchors()
 			lint.ForbidUnusedAnchors = true
 
-			err := Lint(src, lint)
-			assert.NoError(t, err)
+			problem := Lint([]byte(src), lint)
+			assert.Nil(t, problem)
 		}
 	})
 
@@ -109,8 +109,8 @@ func TestAnchorForbidUnusedAnchors(t *testing.T) {
 			lint := NewAnchors()
 			lint.ForbidUnusedAnchors = true
 
-			err := Lint(src, lint)
-			assert.Error(t, err)
+			problem := Lint([]byte(src), lint)
+			assert.NotNil(t, problem)
 		}
 	})
 }

@@ -2,6 +2,7 @@ package lint
 
 import (
 	"errors"
+	"iter"
 
 	"github.com/goccy/go-yaml/token"
 )
@@ -13,21 +14,19 @@ type Comments struct {
 	IgnoreShebangs       bool
 }
 
-func (c Comments) CheckToken(ctx tokenConext) error {
-	if c.RequireStartingSpace {
-		if err := c.checkStartingSpace(ctx); err != nil {
-			return err
+func (c Comments) CheckToken(ctx tokenContext) iter.Seq[Problem] {
+	return func(yield func(Problem) bool) {
+		if c.RequireStartingSpace {
+			c.checkStartingSpace(ctx, yield)
 		}
 	}
-
-	return nil
 }
 
-func (c Comments) CheckLine(ctx lineContext) error {
-	return nil
+func (c Comments) CheckLine(ctx lineContext) iter.Seq[Problem] {
+	return func(yield func(Problem) bool) {}
 }
 
-func (c Comments) checkStartingSpace(ctx tokenConext) error {
+func (c Comments) checkStartingSpace(ctx tokenContext, yield func(Problem) bool) error {
 	if ctx.currentToken.Type != token.CommentType {
 		return nil
 	}
@@ -41,7 +40,14 @@ func (c Comments) checkStartingSpace(ctx tokenConext) error {
 	}
 
 	if ctx.currentToken.Value[0] != ' ' {
-		return newLintErrorForPosition(commentRequireStartingSpace, ctx.currentToken.Position)
+		problem := Problem{
+			Line:   ctx.currentToken.Position.Line,
+			Column: ctx.currentToken.Position.Column,
+			Error:  newLintError(commentRequireStartingSpace),
+		}
+		if !yield(problem) {
+			return nil
+		}
 	}
 
 	return nil
