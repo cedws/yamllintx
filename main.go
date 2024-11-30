@@ -21,7 +21,11 @@ func main() {
 			MaxSpacesAfter: 1,
 		},
 		lint.TrailingSpaces{},
-		lint.NewAnchors(),
+		lint.Anchors(lint.AnchorOpts{
+			ForbidUndeclaredAliases: true,
+			ForbidDuplicatedAnchors: true,
+			ForbidUnusedAnchors:     true,
+		}),
 	}
 
 	file := flag.String("src", "", "source file")

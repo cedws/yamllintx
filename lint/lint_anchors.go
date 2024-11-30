@@ -7,23 +7,27 @@ import (
 	"github.com/goccy/go-yaml/token"
 )
 
-type Anchors struct {
-	ForbidUndeclaredAliases bool
-	ForbidDuplicatedAnchors bool
-	ForbidUnusedAnchors     bool
-
+type anchors struct {
+	AnchorOpts
 	declaredAnchors map[string]struct{}
 	usedAnchors     map[string]struct{}
 }
 
-func NewAnchors() Anchors {
-	return Anchors{
+type AnchorOpts struct {
+	ForbidUndeclaredAliases bool
+	ForbidDuplicatedAnchors bool
+	ForbidUnusedAnchors     bool
+}
+
+func Anchors(opts AnchorOpts) Linter {
+	return anchors{
+		AnchorOpts:      opts,
 		declaredAnchors: make(map[string]struct{}),
 		usedAnchors:     make(map[string]struct{}),
 	}
 }
 
-func (a Anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
+func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 	return func(yield func(Problem) bool) {
 		if ctx.currentToken.Type == token.AnchorType && ctx.nextToken != nil {
 			anchorName := ctx.nextToken.Value
@@ -77,6 +81,6 @@ func (a Anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 	}
 }
 
-func (a Anchors) CheckLine(ctx lineContext) iter.Seq[Problem] {
+func (a anchors) CheckLine(ctx lineContext) iter.Seq[Problem] {
 	return func(yield func(Problem) bool) {}
 }

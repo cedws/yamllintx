@@ -28,8 +28,9 @@ func TestAnchorForbidUndeclaredAliases(t *testing.T) {
 
 	t.Run("Pass", func(t *testing.T) {
 		for _, src := range []string{pass1} {
-			lint := NewAnchors()
-			lint.ForbidUndeclaredAliases = true
+			lint := Anchors(AnchorOpts{
+				ForbidUndeclaredAliases: true,
+			})
 
 			problem := Lint([]byte(src), lint)
 			assert.Nil(t, problem)
@@ -38,8 +39,9 @@ func TestAnchorForbidUndeclaredAliases(t *testing.T) {
 
 	t.Run("Fail", func(t *testing.T) {
 		for _, src := range []string{fail1, fail2} {
-			lint := NewAnchors()
-			lint.ForbidUndeclaredAliases = true
+			lint := Anchors(AnchorOpts{
+				ForbidUndeclaredAliases: true,
+			})
 
 			problem := Lint([]byte(src), lint)
 			assert.NotNil(t, problem)
@@ -60,8 +62,9 @@ func TestAnchorForbidDuplicatedAliases(t *testing.T) {
 
 	t.Run("Pass", func(t *testing.T) {
 		for _, src := range []string{pass1} {
-			lint := NewAnchors()
-			lint.ForbidDuplicatedAnchors = true
+			lint := Anchors(AnchorOpts{
+				ForbidDuplicatedAnchors: true,
+			})
 
 			problem := Lint([]byte(src), lint)
 			assert.Nil(t, problem)
@@ -70,8 +73,9 @@ func TestAnchorForbidDuplicatedAliases(t *testing.T) {
 
 	t.Run("Fail", func(t *testing.T) {
 		for _, src := range []string{fail1} {
-			lint := NewAnchors()
-			lint.ForbidDuplicatedAnchors = true
+			lint := Anchors(AnchorOpts{
+				ForbidDuplicatedAnchors: true,
+			})
 
 			problem := Lint([]byte(src), lint)
 			assert.NotNil(t, problem)
@@ -96,8 +100,9 @@ func TestAnchorForbidUnusedAnchors(t *testing.T) {
 
 	t.Run("Pass", func(t *testing.T) {
 		for _, src := range []string{pass1} {
-			lint := NewAnchors()
-			lint.ForbidUnusedAnchors = true
+			lint := Anchors(AnchorOpts{
+				ForbidUnusedAnchors: true,
+			})
 
 			problem := Lint([]byte(src), lint)
 			assert.Nil(t, problem)
@@ -106,8 +111,9 @@ func TestAnchorForbidUnusedAnchors(t *testing.T) {
 
 	t.Run("Fail", func(t *testing.T) {
 		for _, src := range []string{fail1} {
-			lint := NewAnchors()
-			lint.ForbidUnusedAnchors = true
+			lint := Anchors(AnchorOpts{
+				ForbidUnusedAnchors: true,
+			})
 
 			problem := Lint([]byte(src), lint)
 			assert.NotNil(t, problem)
