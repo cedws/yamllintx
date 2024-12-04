@@ -7,6 +7,12 @@ import (
 	"github.com/goccy/go-yaml/token"
 )
 
+var (
+	ErrAnchorDuplicated = errors.New("anchor is duplicated")
+	ErrAnchorUndeclared = errors.New("alias references an undeclared anchor")
+	ErrAnchorNotUsed    = errors.New("anchor is declared but not used")
+)
+
 type anchors struct {
 	AnchorOpts
 	declaredAnchors map[string]token.Token
@@ -36,7 +42,7 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 				problem := problem(
 					ctx.currentToken.Position.Line,
 					ctx.currentToken.Position.Column,
-					errors.New("anchor is duplicated"),
+					ErrAnchorDuplicated,
 				)
 				if !yield(problem) {
 					return
@@ -53,7 +59,7 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 				problem := problem(
 					ctx.currentToken.Position.Line,
 					ctx.currentToken.Position.Column,
-					errors.New("alias references an undeclared anchor"),
+					ErrAnchorUndeclared,
 				)
 				if !yield(problem) {
 					return
@@ -70,7 +76,7 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 					problem := problem(
 						anchor.Position.Line,
 						anchor.Position.Column,
-						errors.New("anchor is declared but not used"),
+						ErrAnchorNotUsed,
 					)
 					if !yield(problem) {
 						return

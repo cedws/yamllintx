@@ -7,7 +7,7 @@ import (
 	"github.com/goccy/go-yaml/token"
 )
 
-var hypensMaxSpacesAfter = errors.New("too many spaces after hypen")
+var ErrHypensMaxSpacesAfter = errors.New("too many spaces after hypen")
 
 type Hyphens struct {
 	MaxSpacesAfter int
@@ -36,7 +36,7 @@ func (h Hyphens) checkMaxSpacesAfter(ctx tokenContext, yield func(Problem) bool)
 		problem := problem(
 			ctx.nextToken.Position.Line,
 			ctx.nextToken.Position.Column+leadingSpaces,
-			hypensMaxSpacesAfter,
+			ErrHypensMaxSpacesAfter,
 		)
 		if !yield(problem) {
 			return

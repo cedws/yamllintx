@@ -5,6 +5,8 @@ import (
 	"iter"
 )
 
+var ErrTrailingSpaces = errors.New("trailing spaces are forbidden")
+
 type TrailingSpaces struct{}
 
 func (t TrailingSpaces) CheckToken(ctx tokenContext) iter.Seq[Problem] {
@@ -19,7 +21,7 @@ func (t TrailingSpaces) CheckLine(ctx lineContext) iter.Seq[Problem] {
 			problem := problem(
 				ctx.currentLineNumber,
 				trailingSpaces+1,
-				errors.New("trailing spaces are forbidden"),
+				ErrTrailingSpaces,
 			)
 			if !yield(problem) {
 				return

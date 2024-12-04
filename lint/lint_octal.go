@@ -7,6 +7,11 @@ import (
 	"github.com/goccy/go-yaml/token"
 )
 
+var (
+	ErrOctalImplicit = errors.New("implicit octal literals are forbidden")
+	ErrExplicitOctal = errors.New("explicit octal literals are forbidden")
+)
+
 type Octal struct {
 	ForbidImplicitOctal bool
 	ForbidExplicitOctal bool
@@ -41,7 +46,7 @@ func (o Octal) checkImplicitOctal(ctx tokenContext, yield func(Problem) bool) {
 		problem := problem(
 			ctx.currentToken.Position.Line,
 			ctx.currentToken.Position.Column,
-			errors.New("implicit octal literals are forbidden"),
+			ErrOctalImplicit,
 		)
 		if !yield(problem) {
 			return
@@ -62,7 +67,7 @@ func (o Octal) checkExplicitOctal(ctx tokenContext, yield func(Problem) bool) er
 		problem := problem(
 			ctx.currentToken.Position.Line,
 			ctx.currentToken.Position.Column,
-			errors.New("explicit octal literals are forbidden"),
+			ErrExplicitOctal,
 		)
 		if !yield(problem) {
 			return nil

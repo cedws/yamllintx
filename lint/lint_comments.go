@@ -7,7 +7,7 @@ import (
 	"github.com/goccy/go-yaml/token"
 )
 
-var commentRequireStartingSpace = errors.New("comment must start with a space")
+var ErrCommentRequireStartingSpace = errors.New("comment must start with a space")
 
 type Comments struct {
 	RequireStartingSpace bool
@@ -43,7 +43,7 @@ func (c Comments) checkStartingSpace(ctx tokenContext, yield func(Problem) bool)
 		problem := problem(
 			ctx.currentToken.Position.Line,
 			ctx.currentToken.Position.Column,
-			commentRequireStartingSpace,
+			ErrCommentRequireStartingSpace,
 		)
 		if !yield(problem) {
 			return nil

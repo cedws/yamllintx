@@ -8,12 +8,21 @@ import (
 	"github.com/goccy/go-yaml/token"
 )
 
+var (
+	ErrBracesForbidden          = errors.New("braces are forbidden")
+	ErrBracesNonEmptyForbidden  = errors.New("non empty braces are forbidden")
+	ErrBracesTooFewSpaces       = errors.New("too few spaces inside braces")
+	ErrBracesTooManySpaces      = errors.New("too many spaces inside braces")
+	ErrBracesTooFewSpacesEmpty  = errors.New("too few spaces inside empty braces")
+	ErrBracesTooManySpacesEmpty = errors.New("too many spaces inside empty braces")
+)
+
 type ForbidBraces int
 
 const (
 	ForbidBracesNone ForbidBraces = iota
 	ForbidBracesAll
-	ForbidBracesEmpty
+	ForbidBracesNonEmpty
 )
 
 type Braces struct {
@@ -26,14 +35,24 @@ type Braces struct {
 
 func (b Braces) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 	return func(yield func(Problem) bool) {
-		b.checkSpacesStart(ctx, yield)
-		b.checkSpacesEnd(ctx, yield)
+		if b.Forbid == ForbidBracesAll || b.Forbid == ForbidBracesNonEmpty {
+			if !b.checkBraces(ctx, yield) {
+				return
+			}
+		}
+
+		if !b.checkSpacesStart(ctx, yield) {
+			return
+		}
+		if !b.checkSpacesEnd(ctx, yield) {
+			return
+		}
 	}
 }
 
-func (b Braces) checkSpacesStart(ctx tokenContext, yield func(Problem) bool) {
+func (b Braces) checkSpacesStart(ctx tokenContext, yield func(Problem) bool) bool {
 	if ctx.nextToken == nil {
-		return
+		return true
 	}
 
 	if ctx.currentToken.Type == token.MappingStartType {
@@ -44,10 +63,10 @@ func (b Braces) checkSpacesStart(ctx tokenContext, yield func(Problem) bool) {
 				problem := problem(
 					ctx.nextToken.Position.Line,
 					ctx.nextToken.Position.Column,
-					errors.New("too few spaces inside braces"),
+					ErrBracesTooFewSpacesEmpty,
 				)
 				if !yield(problem) {
-					return
+					return false
 				}
 			}
 
@@ -55,28 +74,26 @@ func (b Braces) checkSpacesStart(ctx tokenContext, yield func(Problem) bool) {
 				problem := problem(
 					ctx.nextToken.Position.Line,
 					ctx.nextToken.Position.Column,
-					errors.New("too many spaces inside braces"),
+					ErrBracesTooManySpacesEmpty,
 				)
 				if !yield(problem) {
-					return
+					return false
 				}
 			}
 
-			return
+			return true
 		}
 
-		leadingSpaces := strings.LastIndexFunc(ctx.nextToken.Origin, func(r rune) bool {
-			return r != ' '
-		})
+		leadingSpaces := leadingSpaces(ctx.nextToken.Origin)
 
 		if leadingSpaces < b.MinSpacesInside {
 			problem := problem(
 				ctx.currentToken.Position.Line,
 				ctx.currentToken.Position.Column,
-				errors.New("too few spaces inside braces"),
+				ErrBracesTooFewSpaces,
 			)
 			if !yield(problem) {
-				return
+				return false
 			}
 		}
 
@@ -84,49 +101,49 @@ func (b Braces) checkSpacesStart(ctx tokenContext, yield func(Problem) bool) {
 			problem := problem(
 				ctx.currentToken.Position.Line,
 				ctx.currentToken.Position.Column,
-				errors.New("too many spaces inside braces"),
+				ErrBracesTooManySpaces,
 			)
 			if !yield(problem) {
-				return
+				return false
 			}
 		}
-
-		return
 	}
+
+	return false
 }
 
-func (b Braces) checkSpacesEnd(ctx tokenContext, yield func(Problem) bool) {
+func (b Braces) checkSpacesEnd(ctx tokenContext, yield func(Problem) bool) bool {
 	if ctx.lastToken == nil {
-		return
+		return true
 	}
 
 	if ctx.currentToken.Type == token.MappingEndType {
 		if ctx.lastToken.Type == token.MappingStartType {
-			spaces := strings.Count(ctx.currentToken.Origin, " ")
+			leadingSpaces := strings.Count(ctx.currentToken.Origin, " ")
 
-			if spaces < b.MinSpacesInsideEmpty {
+			if leadingSpaces < b.MinSpacesInsideEmpty {
 				problem := problem(
 					ctx.lastToken.Position.Line,
 					ctx.lastToken.Position.Column,
-					errors.New("too few spaces inside braces"),
+					ErrBracesTooFewSpacesEmpty,
 				)
 				if !yield(problem) {
-					return
+					return false
 				}
 			}
 
-			if spaces > b.MaxSpacesInsideEmpty {
+			if leadingSpaces > b.MaxSpacesInsideEmpty {
 				problem := problem(
 					ctx.lastToken.Position.Line,
 					ctx.lastToken.Position.Column,
-					errors.New("too many spaces inside braces"),
+					ErrBracesTooManySpacesEmpty,
 				)
 				if !yield(problem) {
-					return
+					return false
 				}
 			}
 
-			return
+			return true
 		}
 
 		trailingSpaces := trailingSpaces(ctx.lastToken.Origin)
@@ -135,10 +152,10 @@ func (b Braces) checkSpacesEnd(ctx tokenContext, yield func(Problem) bool) {
 			problem := problem(
 				ctx.currentToken.Position.Line,
 				ctx.currentToken.Position.Column,
-				errors.New("too few spaces inside braces"),
+				ErrBracesTooFewSpaces,
 			)
 			if !yield(problem) {
-				return
+				return false
 			}
 		}
 
@@ -146,58 +163,94 @@ func (b Braces) checkSpacesEnd(ctx tokenContext, yield func(Problem) bool) {
 			problem := problem(
 				ctx.currentToken.Position.Line,
 				ctx.currentToken.Position.Column,
-				errors.New("too many spaces inside braces"),
+				ErrBracesTooManySpaces,
 			)
 			if !yield(problem) {
-				return
+				return false
 			}
 		}
-
-		return
 	}
+
+	return true
 }
 
-func (b Braces) checkBraces(ctx tokenContext, yield func(Problem) bool) {
+func (b Braces) checkBraces(ctx tokenContext, yield func(Problem) bool) bool {
 	switch ctx.currentToken.Type {
 	case token.MappingStartType:
 		if ctx.currentToken.Value != "{" {
-			return
+			return true
 		}
 	case token.MappingEndType:
 		if ctx.currentToken.Value != "}" {
-			return
+			return true
 		}
 	default:
-		return
+		return true
 	}
 
 	if b.Forbid == ForbidBracesAll {
 		problem := problem(
 			ctx.currentToken.Position.Line,
 			ctx.currentToken.Position.Column,
-			errors.New("braces are forbidden"),
+			ErrBracesForbidden,
 		)
 		if !yield(problem) {
-			return
+			return false
 		}
+
+		return false
 	}
 
-	if b.Forbid == ForbidBracesEmpty {
-		if ctx.nextToken == nil {
-			return
-		}
+	if b.Forbid == ForbidBracesNonEmpty {
+		if ctx.nextToken != nil &&
+			ctx.nextToken.Type == token.MappingEndType &&
+			ctx.currentToken.Type == token.MappingStartType {
+			spaces := strings.Count(ctx.nextToken.Origin, " ")
 
-		if ctx.nextToken.Type == token.MappingEndType {
+			if spaces > 0 {
+				problem := problem(
+					ctx.nextToken.Position.Line,
+					ctx.nextToken.Position.Column,
+					ErrBracesNonEmptyForbidden,
+				)
+				if !yield(problem) {
+					return false
+				}
+
+				return false
+			}
+		} else if ctx.lastToken != nil &&
+			ctx.lastToken.Type == token.MappingStartType &&
+			ctx.currentToken.Type == token.MappingEndType {
+			spaces := strings.Count(ctx.currentToken.Origin, " ")
+
+			if spaces > 0 {
+				problem := problem(
+					ctx.currentToken.Position.Line,
+					ctx.currentToken.Position.Column,
+					ErrBracesNonEmptyForbidden,
+				)
+				if !yield(problem) {
+					return false
+				}
+
+				return false
+			}
+		} else {
 			problem := problem(
-				ctx.nextToken.Position.Line,
-				ctx.nextToken.Position.Column,
-				errors.New("empty braces are forbidden"),
+				ctx.currentToken.Position.Line,
+				ctx.currentToken.Position.Column,
+				ErrBracesNonEmptyForbidden,
 			)
 			if !yield(problem) {
-				return
+				return false
 			}
+
+			return false
 		}
 	}
+
+	return true
 }
 
 func (b Braces) CheckLine(ctx lineContext) iter.Seq[Problem] {

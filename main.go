@@ -27,7 +27,7 @@ func main() {
 			ForbidUnusedAnchors:     true,
 		}),
 		lint.Braces{
-			Forbid:          lint.ForbidBracesNone,
+			Forbid:          lint.ForbidBracesNonEmpty,
 			MinSpacesInside: 1,
 			MaxSpacesInside: 3,
 		},

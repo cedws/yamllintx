@@ -67,7 +67,7 @@ type Problem struct {
 // LintAll performs linting on the entire source code and returns an iterator of all errors found.
 func LintAll(src []byte, linters ...Linter) iter.Seq[Problem] {
 	tokens := lexer.Tokenize(string(src))
-	tokens.Dump()
+	// tokens.Dump()
 
 	var lines []string
 	lineScanner := bufio.NewScanner(bytes.NewReader(src))
