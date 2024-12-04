@@ -9,7 +9,7 @@ import (
 
 type anchors struct {
 	AnchorOpts
-	declaredAnchors map[string]struct{}
+	declaredAnchors map[string]token.Token
 	usedAnchors     map[string]struct{}
 }
 
@@ -22,7 +22,7 @@ type AnchorOpts struct {
 func Anchors(opts AnchorOpts) Linter {
 	return anchors{
 		AnchorOpts:      opts,
-		declaredAnchors: make(map[string]struct{}),
+		declaredAnchors: make(map[string]token.Token),
 		usedAnchors:     make(map[string]struct{}),
 	}
 }
@@ -43,7 +43,7 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 				}
 			}
 
-			a.declaredAnchors[anchorName] = struct{}{}
+			a.declaredAnchors[anchorName] = *ctx.currentToken
 		}
 
 		if ctx.currentToken.Type == token.AliasType && ctx.nextToken != nil {
@@ -64,12 +64,12 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 		}
 
 		// Final token
-		if ctx.nextToken == nil && a.ForbidUnusedAnchors {
-			for anchorName := range a.declaredAnchors {
+		if a.ForbidUnusedAnchors && ctx.nextToken == nil {
+			for anchorName, anchor := range a.declaredAnchors {
 				if _, ok := a.usedAnchors[anchorName]; !ok {
 					problem := Problem{
-						Line:   ctx.currentToken.Position.Line,
-						Column: ctx.currentToken.Position.Column,
+						Line:   anchor.Position.Line,
+						Column: anchor.Position.Column,
 						Error:  newLintError(errors.New("anchor is declared but not used")),
 					}
 					if !yield(problem) {
