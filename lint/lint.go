@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+	"strings"
 
 	"github.com/goccy/go-yaml/lexer"
 	"github.com/goccy/go-yaml/token"
@@ -15,6 +16,28 @@ var lintError = errors.New("lint error")
 
 func newLintError(err error) error {
 	return fmt.Errorf("%w: %w", lintError, err)
+}
+
+func problem(lint, column int, err error) Problem {
+	return Problem{
+		Line:   lint,
+		Column: column,
+		Error:  newLintError(err),
+	}
+}
+
+func leadingSpaces(s string) int {
+	if len(s) == 0 {
+		return 0
+	}
+	return len(s) - len(strings.TrimLeft(s, " "))
+}
+
+func trailingSpaces(s string) int {
+	if len(s) == 0 {
+		return 0
+	}
+	return len(s) - len(strings.TrimRight(s, " "))
 }
 
 type tokenContext struct {
@@ -44,11 +67,12 @@ type Problem struct {
 // LintAll performs linting on the entire source code and returns an iterator of all errors found.
 func LintAll(src []byte, linters ...Linter) iter.Seq[Problem] {
 	tokens := lexer.Tokenize(string(src))
+	tokens.Dump()
 
 	var lines []string
-	scanner := bufio.NewScanner(bytes.NewReader(src))
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+	lineScanner := bufio.NewScanner(bytes.NewReader(src))
+	for lineScanner.Scan() {
+		lines = append(lines, lineScanner.Text())
 	}
 
 	seqFunc := func(yield func(Problem) bool) {

@@ -3,7 +3,6 @@ package lint
 import (
 	"errors"
 	"iter"
-	"strings"
 )
 
 type TrailingSpaces struct{}
@@ -14,16 +13,14 @@ func (t TrailingSpaces) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 
 func (t TrailingSpaces) CheckLine(ctx lineContext) iter.Seq[Problem] {
 	return func(yield func(Problem) bool) {
-		lastNonSpace := strings.LastIndexFunc(ctx.currentLine, func(r rune) bool {
-			return r != ' '
-		})
+		trailingSpaces := trailingSpaces(ctx.currentLine)
 
-		if lastNonSpace != len(ctx.currentLine)-1 {
-			problem := Problem{
-				Line:   ctx.currentLineNumber,
-				Column: lastNonSpace + 1,
-				Error:  newLintError(errors.New("trailing spaces are forbidden")),
-			}
+		if trailingSpaces > 0 {
+			problem := problem(
+				ctx.currentLineNumber,
+				trailingSpaces+1,
+				errors.New("trailing spaces are forbidden"),
+			)
 			if !yield(problem) {
 				return
 			}

@@ -38,11 +38,11 @@ func (o Octal) checkImplicitOctal(ctx tokenContext, yield func(Problem) bool) {
 	}
 
 	if ctx.currentToken.Value[0] == '0' && ctx.currentToken.Value[1] != 'o' {
-		problem := Problem{
-			Line:   ctx.currentToken.Position.Line,
-			Column: ctx.currentToken.Position.Column,
-			Error:  newLintError(errors.New("implicit octal literals are forbidden")),
-		}
+		problem := problem(
+			ctx.currentToken.Position.Line,
+			ctx.currentToken.Position.Column,
+			errors.New("implicit octal literals are forbidden"),
+		)
 		if !yield(problem) {
 			return
 		}
@@ -59,11 +59,11 @@ func (o Octal) checkExplicitOctal(ctx tokenContext, yield func(Problem) bool) er
 	}
 
 	if ctx.currentToken.Value[0] == '0' && ctx.currentToken.Value[1] == 'o' {
-		problem := Problem{
-			Line:   ctx.currentToken.Position.Line,
-			Column: ctx.currentToken.Position.Column,
-			Error:  newLintError(errors.New("explicit octal literals are forbidden")),
-		}
+		problem := problem(
+			ctx.currentToken.Position.Line,
+			ctx.currentToken.Position.Column,
+			errors.New("explicit octal literals are forbidden"),
+		)
 		if !yield(problem) {
 			return nil
 		}

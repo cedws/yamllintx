@@ -40,11 +40,11 @@ func (c Comments) checkStartingSpace(ctx tokenContext, yield func(Problem) bool)
 	}
 
 	if ctx.currentToken.Value[0] != ' ' {
-		problem := Problem{
-			Line:   ctx.currentToken.Position.Line,
-			Column: ctx.currentToken.Position.Column,
-			Error:  newLintError(commentRequireStartingSpace),
-		}
+		problem := problem(
+			ctx.currentToken.Position.Line,
+			ctx.currentToken.Position.Column,
+			commentRequireStartingSpace,
+		)
 		if !yield(problem) {
 			return nil
 		}

@@ -3,7 +3,6 @@ package lint
 import (
 	"errors"
 	"iter"
-	"strings"
 
 	"github.com/goccy/go-yaml/token"
 )
@@ -31,19 +30,14 @@ func (h Hyphens) checkMaxSpacesAfter(ctx tokenContext, yield func(Problem) bool)
 		return
 	}
 
-	origin := ctx.nextToken.Origin
-	firstNonSpace := strings.IndexFunc(origin, func(r rune) bool {
-		return r != ' '
-	})
-	if firstNonSpace == -1 {
-		firstNonSpace = len(origin)
-	}
-	if firstNonSpace > h.MaxSpacesAfter {
-		problem := Problem{
-			Line:   ctx.nextToken.Position.Line,
-			Column: ctx.nextToken.Position.Column + firstNonSpace,
-			Error:  newLintError(hypensMaxSpacesAfter),
-		}
+	leadingSpaces := leadingSpaces(ctx.nextToken.Origin)
+
+	if leadingSpaces > h.MaxSpacesAfter {
+		problem := problem(
+			ctx.nextToken.Position.Line,
+			ctx.nextToken.Position.Column+leadingSpaces,
+			hypensMaxSpacesAfter,
+		)
 		if !yield(problem) {
 			return
 		}

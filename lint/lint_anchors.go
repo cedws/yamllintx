@@ -33,11 +33,11 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 			anchorName := ctx.nextToken.Value
 
 			if _, ok := a.declaredAnchors[anchorName]; ok && a.ForbidDuplicatedAnchors {
-				problem := Problem{
-					Line:   ctx.currentToken.Position.Line,
-					Column: ctx.currentToken.Position.Column,
-					Error:  newLintError(errors.New("anchor is duplicated")),
-				}
+				problem := problem(
+					ctx.currentToken.Position.Line,
+					ctx.currentToken.Position.Column,
+					errors.New("anchor is duplicated"),
+				)
 				if !yield(problem) {
 					return
 				}
@@ -50,11 +50,11 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 			anchorName := ctx.nextToken.Value
 
 			if _, ok := a.declaredAnchors[anchorName]; !ok && a.ForbidUndeclaredAliases {
-				problem := Problem{
-					Line:   ctx.currentToken.Position.Line,
-					Column: ctx.currentToken.Position.Column,
-					Error:  newLintError(errors.New("alias references an undeclared anchor")),
-				}
+				problem := problem(
+					ctx.currentToken.Position.Line,
+					ctx.currentToken.Position.Column,
+					errors.New("alias references an undeclared anchor"),
+				)
 				if !yield(problem) {
 					return
 				}
@@ -67,11 +67,11 @@ func (a anchors) CheckToken(ctx tokenContext) iter.Seq[Problem] {
 		if a.ForbidUnusedAnchors && ctx.nextToken == nil {
 			for anchorName, anchor := range a.declaredAnchors {
 				if _, ok := a.usedAnchors[anchorName]; !ok {
-					problem := Problem{
-						Line:   anchor.Position.Line,
-						Column: anchor.Position.Column,
-						Error:  newLintError(errors.New("anchor is declared but not used")),
-					}
+					problem := problem(
+						anchor.Position.Line,
+						anchor.Position.Column,
+						errors.New("anchor is declared but not used"),
+					)
 					if !yield(problem) {
 						return
 					}

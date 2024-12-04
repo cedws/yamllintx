@@ -26,6 +26,11 @@ func main() {
 			ForbidDuplicatedAnchors: true,
 			ForbidUnusedAnchors:     true,
 		}),
+		lint.Braces{
+			Forbid:          lint.ForbidBracesNone,
+			MinSpacesInside: 1,
+			MaxSpacesInside: 3,
+		},
 	}
 
 	file := flag.String("src", "", "source file")
