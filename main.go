@@ -31,6 +31,11 @@ func main() {
 			MinSpacesInside: 1,
 			MaxSpacesInside: 3,
 		},
+		lint.Brackets{
+			Forbid:          lint.ForbidBracketsNonEmpty,
+			MinSpacesInside: 1,
+			MaxSpacesInside: 1,
+		},
 	}
 
 	file := flag.String("src", "", "source file")
