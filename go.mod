@@ -3,7 +3,8 @@ module github.com/cedws/yamllintx
 go 1.23.3
 
 require (
-	github.com/goccy/go-yaml v1.15.4
+	github.com/bmatcuk/doublestar/v4 v4.7.1
+	github.com/goccy/go-yaml v1.15.10
 	github.com/stretchr/testify v1.10.0
 )
 
